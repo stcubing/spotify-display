@@ -14,23 +14,37 @@ void setup() {
 void loop() {
 
     if (Serial.available()) {
+        String message = Serial.readStringUntil('\n');   
+        
+        StaticJsonDocument<200> doc;
+        DeserializationError error = deserializeJson(doc, message);
 
-        String message = Serial.readStringUntil('\n');
-        Serial.println("received " + message);
+        if (error) {
 
-        if (message.substring(0,6) == "[time]") {
-            // partial update
-
-            digitalWrite(2, HIGH);
+            Serial.println("error");
 
         } else {
-            // full update
 
-            digitalWrite(2, LOW);
+            if (doc["type"] == "small") {
+
+                // partial update
+        
+                digitalWrite(2, HIGH);
+
+            } else if (doc["type"] == "large") {
+                
+                // full update
+        
+                digitalWrite(2, LOW);
+            }
+            
         }
-        
-        
+
     }
+
+
+
+
 
     // Serial.println("periodic message");
     // delay(1000);

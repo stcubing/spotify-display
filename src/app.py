@@ -178,7 +178,7 @@ def update_tokens():
         f.write(refresh_token)
     
 
-def get_activity(token):
+def get_activity(token, test):
     url = "https://api.spotify.com/v1/me/player/currently-playing"
     
     headers = {
@@ -197,41 +197,55 @@ def get_activity(token):
     
     # decision split here based on time
     
+    if test:
     
-    
-    # what info to get
-    # - song name
-    # - artists (comma separated)
-    # - album cover url (figure out how to convert to eink)
-    # - current timestamp
-    # - playing status
-    
-    # do the time adaptivity thing later on idfk how to do that lmao
-    
-    # return what. a json file?
-    
-    type = "large" # use this to differentiate between small and large messages
-    title = data["item"]["name"]
-    artist_list = data["item"]["artists"] # list
-    cover = data["item"]["album"]["images"][0]["url"]
-    timestamp = data["progress_ms"]
-    is_playing = data["is_playing"]
-    
-    artist_name_list = []
-    for artist in artist_list:
-        artist_name_list.append(artist["name"])
-    artists = ", ".join(artist_name_list)
-    
-    
-    output = {
-        "type": type,
-        "title": title,
-        "artist": artists,
-        "cover": cover,
-        "timestamp": timestamp,
-        "is_playing": is_playing
-    }
+        # what info to get
+        # - song name
+        # - artists (comma separated)
+        # - album cover url (figure out how to convert to eink)
+        # - current timestamp
+        # - playing status
+        
+        # do the time adaptivity thing later on idfk how to do that lmao
+        
+        # return what. a json file?
+        
+        type = "large" # use this to differentiate between small and large messages
+        title = data["item"]["name"]
+        artist_list = data["item"]["artists"] # list
+        cover = data["item"]["album"]["images"][0]["url"]
+        timestamp = data["progress_ms"]
+        is_playing = data["is_playing"]
+        
+        artist_name_list = []
+        for artist in artist_list:
+            artist_name_list.append(artist["name"])
+        artists = ", ".join(artist_name_list)
+        
+        
+        output = {
+            "type": type,
+            "title": title,
+            "artist": artists,
+            "cover": cover,
+            "timestamp": timestamp,
+            "is_playing": is_playing
+        }
+        
+    else:
+        # partial
+        
+        type = "small"
+        timestamp = data["progress_ms"]
+        
+        output = {
+            "type": type,
+            "timestamp": timestamp
+        }
+        
+        
     output = json.dumps(output)
+    print(output)
     
     ser.write(output.encode("ascii"))
     ser.flush() # wait to finish before proceeding
@@ -240,23 +254,21 @@ def get_activity(token):
 
 if __name__ == "__main__":
     access_token, refresh_token = read_tokens()
-    get_activity(access_token)
-
-
-# while True:
+    # get_activity(access_token)
+    # ser.close()
     
-#     message = input("enter (x/o): ")
     
-#     if message == "x":
-#         print("simulating full display refresh (led should be off)")
-#         ser.write(b"asdf\n")
+    # temp testing
+    while True:
+        gurt = input("enter choice (x/o): ")
         
-#     elif message == "o":
-#         print("simulating partial display refresh (led should be on)")
-#         ser.write(b"[time] asdf\n")
-        
-#     else:
-#         print("invalid")
+        if gurt == "x":
+            print("doing partial refresh, led should be ON")
+            get_activity(access_token, False)
+            
+        elif gurt == "o":
+            print("doing full refresh, led should be OFF")
+            get_activity(access_token, True)
+
         
 
-ser.close()
