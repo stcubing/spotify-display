@@ -15,14 +15,24 @@ void loop() {
     if (Serial.available()) {
 
         String message = Serial.readStringUntil('\n');
-
         Serial.println("received " + message);
-        digitalWrite(2, HIGH);
+
+        if (message.substring(0,6) == "[time]") {
+            // partial update
+
+            digitalWrite(2, HIGH);
+
+        } else {
+            // full update
+
+            digitalWrite(2, LOW);
+        }
+        
         
     }
 
-    Serial.println("periodic message");
-    delay(1000);
+    // Serial.println("periodic message");
+    // delay(1000);
 
 
 }
