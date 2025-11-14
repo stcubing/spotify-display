@@ -178,14 +178,16 @@ last = {
     "id": None
 } # save last recorded details
 
+cooldown_counter = 3 # for refresh cooldown
+
 def get_activity(token, refresh):
     
     global last
+    global cooldown_counter
     
     """ 
     the actual Meat and Potaro of this program. outputs a json with contents dependent on activity
     """
-    
     
     
     url = "https://api.spotify.com/v1/me/player/currently-playing"
@@ -230,6 +232,8 @@ def get_activity(token, refresh):
     print(f"music playing: {is_playing}")
     
     if is_playing:
+        
+        cooldown_counter += 1
     
         if last.get("id") == id: # still listening to the same song
             
@@ -243,23 +247,35 @@ def get_activity(token, refresh):
             
         else: # listening to different song
             
-            print("song changed | full refresh, led OFF")
+            if cooldown_counter > 2:
+            
+                print("song changed | full refresh, led OFF")
 
-            output = {
-                "type": "large",
-                "title": title,
-                "artist": artists,
-                "cover": cover,
-                "timestamp": timestamp,
-                "duration": duration,
-                "is_playing": is_playing,
-                "id": id
-            }
-            last = output # refresh last saved
+                output = {
+                    "type": "large",
+                    "title": title,
+                    "artist": artists,
+                    "cover": cover,
+                    "timestamp": timestamp,
+                    "duration": duration,
+                    "is_playing": is_playing,
+                    "id": id
+                }
+                last = output # refresh last saved
+                
+                cooldown_counter = 0
+            
+            else:
+                print("tried full refreshing before cooldown is cleared")
+                return
+            
+        
             
     else: # if no music is playing, dont return anything at all
         print("nothing changes")
+        cooldown_counter += 1
         return
+    
     
     output = json.dumps(output)
     print(output)
@@ -277,8 +293,10 @@ if __name__ == "__main__":
     
     # temp testing
     while True:
-        gurt = input()
+        # gurt = input()
         get_activity(access_token, refresh_token)
+        print(cooldown_counter)
+        time.sleep(1)
     
 
         
