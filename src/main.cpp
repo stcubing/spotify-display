@@ -1,9 +1,10 @@
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <LittleFS.h>
 
 void setup() {
     // set up eink stuff here
-    Serial.begin(115200); // make sure to send messages through this baud
+    Serial.begin(9600); // make sure to send messages through this baud
 
     pinMode(2, OUTPUT);
 
