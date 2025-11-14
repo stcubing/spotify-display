@@ -14,9 +14,10 @@ void setup() {
 void loop() {
 
     if (Serial.available()) {
-        String message = Serial.readStringUntil('\n');   
+        String message = Serial.readStringUntil('\n');
+        message.trim();
         
-        StaticJsonDocument<200> doc;
+        StaticJsonDocument<400> doc;
         DeserializationError error = deserializeJson(doc, message);
 
         if (error) {

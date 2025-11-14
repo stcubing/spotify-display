@@ -124,10 +124,10 @@ def update_token(refresh_token):
     }
     
     result = requests.post(url, headers = headers, data = data)
+    
+    print(result.json())
     return result.json()
     
-
-
 
 
 
@@ -139,25 +139,11 @@ def update_token(refresh_token):
 
 
 
-    
-
-
-
-# every hour, call update_token(refresh_token)
-# actually nvm just do a try catch or something and if it fails, update
-
-
-
-# ser.write(b"gurt\n")
-
-# while True:
-#     # reading any incoming serial messages
-#     line = ser.readline().decode(errors="ignore").strip()
-#     if line:
-#         print("esp: " + line)
-
-
 def read_tokens():
+    
+    """
+    return access and refresh token from tokens file 
+    """
 
     with open("token.txt", "r") as f:
         lines = f.readlines()
@@ -166,19 +152,42 @@ def read_tokens():
     return access_token.strip("\n"), refresh_token
 
 
-
-def update_tokens():
-    tokens = update_token(refresh_token)
-    access_token = tokens["access_token"]
-    refresh_token = tokens["refresh_token"]
+def update_tokens(ref_token):
     
-    # save to a file so i dont have to keep Freaking reopening the browser
+    """
+    get new access token with the PERPETUAL refresh token
+    """
+    
+    tokens = update_token(ref_token) # get json
+    access_token = tokens["access_token"]
+    
+    # resave to file
     with open("token.txt", "w") as f:
         f.write(access_token+"\n")
-        f.write(refresh_token)
+        f.write(ref_token)
     
 
-def get_activity(token, test):
+last = {
+    "type": None,
+    "title": None,
+    "artist": None,
+    "cover": None,
+    "timestamp": None,
+    "duration": None,
+    "is_playing": None,
+    "id": None
+} # save last recorded details
+
+def get_activity(token, refresh):
+    
+    global last
+    
+    """ 
+    the actual Meat and Potaro of this program. outputs a json with contents dependent on activity
+    """
+    
+    
+    
     url = "https://api.spotify.com/v1/me/player/currently-playing"
     
     headers = {
@@ -188,62 +197,70 @@ def get_activity(token, test):
     result = get(url, headers = headers)
     
     if result.status_code == 401:
-        update_tokens()
+        print("updating token...")
+        update_tokens(refresh)
         result = get(url, headers = headers)
-        
     
+    if result.content == "b''" or result.status_code == 204:
+        # no activity for a loooong time
+        # use last saved data
+        print("been a while since last activity")
+        print(last)
+        return last
+        
     data = json.loads(result.content)
     
+    title = data.get("item").get("name")
+    artist_list = data.get("item").get("artists") # list
+    cover = data.get("item").get("album").get("images")[0].get("url")
+    timestamp = data.get("progress_ms") # convert to mm:ss later
+    duration = data.get("item").get("duration_ms") # convert to mm:ss later
+    is_playing = data.get("is_playing")
+    
+    id = data.get("item").get("id")
+    
+    artist_name_list = []
+    for artist in artist_list:
+        artist_name_list.append(artist.get("name"))
+    artists = ", ".join(artist_name_list)
+
     
     # decision split here based on time
     
-    if test:
+    print(f"music playing: {is_playing}")
     
-        # what info to get
-        # - song name
-        # - artists (comma separated)
-        # - album cover url (figure out how to convert to eink)
-        # - current timestamp
-        # - playing status
-        
-        # do the time adaptivity thing later on idfk how to do that lmao
-        
-        # return what. a json file?
-        
-        type = "large" # use this to differentiate between small and large messages
-        title = data["item"]["name"]
-        artist_list = data["item"]["artists"] # list
-        cover = data["item"]["album"]["images"][0]["url"]
-        timestamp = data["progress_ms"]
-        is_playing = data["is_playing"]
-        
-        artist_name_list = []
-        for artist in artist_list:
-            artist_name_list.append(artist["name"])
-        artists = ", ".join(artist_name_list)
-        
-        
-        output = {
-            "type": type,
-            "title": title,
-            "artist": artists,
-            "cover": cover,
-            "timestamp": timestamp,
-            "is_playing": is_playing
-        }
-        
-    else:
-        # partial
-        
-        type = "small"
-        timestamp = data["progress_ms"]
-        
-        output = {
-            "type": type,
-            "timestamp": timestamp
-        }
-        
-        
+    if is_playing:
+    
+        if last.get("id") == id: # still listening to the same song
+            
+            print("currently on same song | partial refresh, led ON")
+            
+            # send only timestamp
+            output = {
+                "type": "small", # differentiate between partial and full refreshes
+                "timestamp": timestamp
+            }
+            
+        else: # listening to different song
+            
+            print("song changed | full refresh, led OFF")
+
+            output = {
+                "type": "large",
+                "title": title,
+                "artist": artists,
+                "cover": cover,
+                "timestamp": timestamp,
+                "duration": duration,
+                "is_playing": is_playing,
+                "id": id
+            }
+            last = output # refresh last saved
+            
+    else: # if no music is playing, dont return anything at all
+        print("nothing changes")
+        return
+    
     output = json.dumps(output)
     print(output)
     
@@ -260,15 +277,9 @@ if __name__ == "__main__":
     
     # temp testing
     while True:
-        gurt = input("enter choice (x/o): ")
-        
-        if gurt == "x":
-            print("doing partial refresh, led should be ON")
-            get_activity(access_token, False)
-            
-        elif gurt == "o":
-            print("doing full refresh, led should be OFF")
-            get_activity(access_token, True)
+        gurt = input()
+        get_activity(access_token, refresh_token)
+    
 
         
 
