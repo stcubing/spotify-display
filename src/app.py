@@ -1,6 +1,7 @@
 import base64
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
+import math
 from urllib.parse import parse_qs, urlencode, urlparse
 import webbrowser
 from dotenv import load_dotenv
@@ -212,11 +213,24 @@ def get_activity(token, refresh):
         
     data = json.loads(result.content)
     
+    if not data:
+        return
+    
+    
+    def ms_convert(ms):
+        seconds = ms / 1000
+        minutes = math.floor(seconds / 60)
+        seconds = math.floor(seconds % 60)
+        return f"{minutes}:{seconds:02d}"
+    
     title = data.get("item").get("name")
     artist_list = data.get("item").get("artists") # list
-    cover = data.get("item").get("album").get("images")[0].get("url")
-    timestamp = data.get("progress_ms") # convert to mm:ss later
-    duration = data.get("item").get("duration_ms") # convert to mm:ss later
+    if len(data.get("item").get("album").get("images")) > 0:
+        cover = data.get("item").get("album").get("images")[0].get("url")
+    else:
+        cover = "/assets/man.jpg" # placeholder
+    timestamp = ms_convert(data.get("progress_ms"))
+    duration = ms_convert(data.get("item").get("duration_ms"))
     is_playing = data.get("is_playing")
     
     id = data.get("item").get("id")
@@ -233,7 +247,8 @@ def get_activity(token, refresh):
     
     if is_playing:
         
-        cooldown_counter += 1
+        if cooldown_counter < 4:
+            cooldown_counter += 1
     
         if last.get("id") == id: # still listening to the same song
             
@@ -273,7 +288,8 @@ def get_activity(token, refresh):
             
     else: # if no music is playing, dont return anything at all
         print("nothing changes")
-        cooldown_counter += 1
+        if cooldown_counter < 4:
+            cooldown_counter += 1
         return
     
     
