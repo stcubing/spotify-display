@@ -11,7 +11,7 @@ import serial
 import time
 import os
 
-ser = serial.Serial("COM6", 9600, timeout = 1)
+ser = serial.Serial("COM6", 38400, timeout = 1)
 time.sleep(2)
 
 print("connected")
@@ -242,7 +242,7 @@ def get_activity(token, refresh):
         artist_name_list.append(artist.get("name"))
     artists = ", ".join(artist_name_list)
     
-    completion = round(data.get("progress_ms")/data.get("item").get("duration_ms"), 1)
+    completion = round(data.get("progress_ms")/data.get("item").get("duration_ms"), 3) # get song playback percentage
 
     
     # decision split here based on time
@@ -262,6 +262,7 @@ def get_activity(token, refresh):
             output = {
                 "type": "small", # differentiate between partial and full refreshes
                 "timestamp": timestamp,
+                "duration": duration,
                 "completion": completion
             }
             
