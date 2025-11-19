@@ -6,44 +6,7 @@
 #include <Fonts/FreeSansBold9pt7b.h>
 
 #include <ArduinoJson.h>
-#include <LittleFS.h>
 
-const unsigned char smiley_bitmap[] PROGMEM = {
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x3F, 0xFC, 0x00, 0x00, 0x00,
-    0x00, 0x01, 0xFF, 0xFF, 0x80, 0x00, 0x00,
-    0x00, 0x07, 0xFF, 0xFF, 0xE0, 0x00, 0x00,
-    0x00, 0x1F, 0x80, 0x01, 0xF8, 0x00, 0x00,
-    0x00, 0x3E, 0x00, 0x00, 0x7C, 0x00, 0x00,
-    0x00, 0x78, 0x00, 0x00, 0x1E, 0x00, 0x00,
-    0x00, 0xF0, 0x00, 0x00, 0x0F, 0x00, 0x00,
-    0x01, 0xE0, 0xC3, 0xC3, 0x07, 0x80, 0x00,
-    0x03, 0xC0, 0xC3, 0xC3, 0x03, 0xC0, 0x00,
-    0x07, 0x80, 0xC3, 0xC3, 0x01, 0xE0, 0x00,
-    0x07, 0x80, 0xC3, 0xC3, 0x01, 0xE0, 0x00,
-    0x0F, 0x00, 0x00, 0x00, 0x00, 0xF0, 0x00,
-    0x0F, 0x00, 0x00, 0x00, 0x00, 0xF0, 0x00,
-    0x1E, 0x00, 0x00, 0x00, 0x00, 0x78, 0x00,
-    0x1E, 0x00, 0x00, 0x00, 0x00, 0x78, 0x00,
-    0x1E, 0x00, 0x00, 0x00, 0x00, 0x78, 0x00,
-    0x1E, 0x00, 0x00, 0x00, 0x00, 0x78, 0x00,
-    0x1E, 0x18, 0x00, 0x00, 0x18, 0x78, 0x00,
-    0x1E, 0x3C, 0x00, 0x00, 0x3C, 0x78, 0x00,
-    0x0F, 0x3E, 0x00, 0x00, 0x7C, 0xF0, 0x00,
-    0x0F, 0x0F, 0x00, 0x00, 0xF0, 0xF0, 0x00,
-    0x07, 0x87, 0xC0, 0x03, 0xE1, 0xE0, 0x00,
-    0x07, 0x83, 0xFF, 0xFF, 0xC1, 0xE0, 0x00,
-    0x03, 0xC0, 0xFF, 0xFF, 0x03, 0xC0, 0x00,
-    0x01, 0xE0, 0x1F, 0xF8, 0x07, 0x80, 0x00,
-    0x00, 0xF0, 0x00, 0x00, 0x0F, 0x00, 0x00,
-    0x00, 0x78, 0x00, 0x00, 0x1E, 0x00, 0x00,
-    0x00, 0x3E, 0x00, 0x00, 0x7C, 0x00, 0x00,
-    0x00, 0x1F, 0x80, 0x01, 0xF8, 0x00, 0x00,
-    0x00, 0x07, 0xFF, 0xFF, 0xE0, 0x00, 0x00,
-    0x00, 0x01, 0xFF, 0xFF, 0x80, 0x00, 0x00,
-    0x00, 0x00, 0x3F, 0xFC, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-};
 
 
 // define display
@@ -52,91 +15,114 @@ GxEPD2_BW<GxEPD2_579_GDEY0579T93, GxEPD2_579_GDEY0579T93::HEIGHT> display(
 );
 
 
+
 void setup() {
-
-    Serial.begin(9600);
-
-    display.init(115200);
-    display.setRotation(0);
-
-    display.setTextColor(GxEPD_BLACK);
-
-    display.firstPage(); // clear
-
-
     
+    Serial.begin(9600);
+    
+    display.init(9600);
+    display.setRotation(0);
+    
+    display.setTextColor(GxEPD_BLACK);
+    
+    pinMode(25, OUTPUT);
+    pinMode(2, OUTPUT);
+    
+    
+    
+}
 
-    if (Serial.available()) {
+void fullRefresh(String title, String artist, String cover, String timestamp, String duration) {
+
+
+
+    display.setFullWindow();
+
+    display.firstPage();
+
+    do {
+        display.fillScreen(GxEPD_WHITE);
+    
+        // display.drawBitmap(50, 50, smiley_bitmap, 50, 34, GxEPD_BLACK); // x, y, image, width, height, colour
+        display.drawRect(20, 36, 200, 200, GxEPD_BLACK); // placeholder
+    
+        display.setFont(&FreeSans18pt7b);
+        display.setTextWrap(false);
+        display.setCursor(245, 95);
+        display.print(title);
+    
+        display.setFont(&FreeSans12pt7b);
+        display.setCursor(245, 140);
+        display.print(artist);
+    
+        display.drawRect(245, 175, 527, 10, GxEPD_BLACK); // outline
+        display.fillRect(245, 175, 400, 10, GxEPD_BLACK); // progress
+    
+        display.setFont(&FreeSansBold9pt7b);
+        display.setCursor(245, 215);
+        display.print(timestamp + " / " + duration);
+
+    } while (display.nextPage());
+
+
+}
+
+void loop() {
+
+    // Serial.println("hello from esp32");
+
+    if (Serial.available())
+    {
         String message = Serial.readStringUntil('\n');
         message.trim();
 
         StaticJsonDocument<400> doc;
         DeserializationError error = deserializeJson(doc, message);
 
-        if (error) {
-            Serial.println("error");
-        }
-        else {
+        // digitalWrite(19, LOW);
+        // digitalWrite(21, LOW);
 
-            if (doc["type"] == "small") {
+        
+
+        if (error)
+        {
+            Serial.println("error");
+            digitalWrite(25, LOW);
+            digitalWrite(2, LOW);
+        }
+        else
+        {
+
+            if (doc["type"] == "small")
+            {
 
                 // partial update
 
-                digitalWrite(2, HIGH);
+                digitalWrite(25, HIGH);
+                delay(500);
+                digitalWrite(25, LOW);
+
+                // display.setPartialWindow(245, 155, 527, 60); // x, y, width, height; should cover prog bar + time text
             }
-            else if (doc["type"] == "large") {
+            else if (doc["type"] == "large")
+            {
 
                 // full update
 
+                digitalWrite(2, HIGH);
+                delay(500);
                 digitalWrite(2, LOW);
+
+                String title = doc["title"];
+                String artist = doc["artist"];
+                String cover = doc["cover"];
+                String timestamp = doc["timestamp"];
+                String duration = doc["duration"];
+
+
+
+                fullRefresh(title, artist, cover, timestamp, duration);
             }
         }
     }
-
-    
-
-    do {
-        display.fillScreen(GxEPD_WHITE);
-
-        // display.drawBitmap(50, 50, smiley_bitmap, 50, 34, GxEPD_BLACK); // x, y, image, width, height, colour
-        display.drawRect(20, 36, 200, 200, GxEPD_BLACK); // placeholder
-
-        display.setFont(&FreeSans18pt7b);
-        display.setTextWrap(false);
-        display.setCursor(245, 95);
-        display.print("The Ballad of Matt & Mica");
-
-        display.setFont(&FreeSans12pt7b);
-        display.setCursor(245, 140);
-        display.print("Magdalena Bay");
-
-
-        display.drawRect(245, 175, 527, 10, GxEPD_BLACK); // outline
-        display.fillRect(245, 175, 400, 10, GxEPD_BLACK); // progress
-
-        display.setFont(&FreeSansBold9pt7b);
-        display.setCursor(245, 215);
-        display.print("3:05 / 4:00");
-
-
-        // // right align
-        // int16_t tbx; // bounds
-        // uint16_t tw; // width/height
-        // display.getTextBounds("texttext", 0, 0, &tbx, 0, &tw, 0);
-
-        // int16_t x = (740 - tw);
-        
-        // display.setCursor(x, 240);
-        // display.print("5:14");
-
-
-    } while (display.nextPage());
-
-}
-
-void loop() {
-
-    Serial.print("gah");
-    delay(1000);
-
 }

@@ -212,6 +212,7 @@ def get_activity(token, refresh):
         return last
         
     data = json.loads(result.content)
+    # print(data)
     
     if not data:
         return
@@ -312,6 +313,9 @@ if __name__ == "__main__":
         # gurt = input()
         get_activity(access_token, refresh_token)
         print(cooldown_counter)
+        # line = ser.readline().decode(errors="ignore").strip()
+        # if line:
+        #     print("esp: " + line)
         time.sleep(1)
     
 
