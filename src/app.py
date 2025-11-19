@@ -175,6 +175,7 @@ last = {
     "cover": None,
     "timestamp": None,
     "duration": None,
+    "completion": None,
     "is_playing": None,
     "id": None
 } # save last recorded details
@@ -240,6 +241,8 @@ def get_activity(token, refresh):
     for artist in artist_list:
         artist_name_list.append(artist.get("name"))
     artists = ", ".join(artist_name_list)
+    
+    completion = round(data.get("progress_ms")/data.get("item").get("duration_ms"), 1)
 
     
     # decision split here based on time
@@ -258,7 +261,8 @@ def get_activity(token, refresh):
             # send only timestamp
             output = {
                 "type": "small", # differentiate between partial and full refreshes
-                "timestamp": timestamp
+                "timestamp": timestamp,
+                "completion": completion
             }
             
         else: # listening to different song
@@ -274,6 +278,7 @@ def get_activity(token, refresh):
                     "cover": cover,
                     "timestamp": timestamp,
                     "duration": duration,
+                    "completion": completion,
                     "is_playing": is_playing,
                     "id": id
                 }

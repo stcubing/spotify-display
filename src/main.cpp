@@ -29,11 +29,9 @@ void setup() {
     pinMode(2, OUTPUT);
     
     
-    
 }
 
-void fullRefresh(String title, String artist, String cover, String timestamp, String duration) {
-
+void fullRefresh(String title, String artist, String cover, String timestamp, String duration, double completion) {
 
 
     display.setFullWindow();
@@ -54,9 +52,11 @@ void fullRefresh(String title, String artist, String cover, String timestamp, St
         display.setFont(&FreeSans12pt7b);
         display.setCursor(245, 140);
         display.print(artist);
+
+        int progress = round(completion * 527);
     
         display.drawRect(245, 175, 527, 10, GxEPD_BLACK); // outline
-        display.fillRect(245, 175, 400, 10, GxEPD_BLACK); // progress
+        display.fillRect(245, 175, progress, 10, GxEPD_BLACK); // progress
     
         display.setFont(&FreeSansBold9pt7b);
         display.setCursor(245, 215);
@@ -67,7 +67,12 @@ void fullRefresh(String title, String artist, String cover, String timestamp, St
 
 }
 
-void loop() {
+void partialRefresh(String timestamp, double completion) {
+    
+}
+
+    void loop()
+{
 
     // Serial.println("hello from esp32");
 
@@ -79,11 +84,7 @@ void loop() {
         StaticJsonDocument<400> doc;
         DeserializationError error = deserializeJson(doc, message);
 
-        // digitalWrite(19, LOW);
-        // digitalWrite(21, LOW);
-
         
-
         if (error)
         {
             Serial.println("error");
@@ -118,10 +119,10 @@ void loop() {
                 String cover = doc["cover"];
                 String timestamp = doc["timestamp"];
                 String duration = doc["duration"];
+                double completion = doc["completion"];
 
 
-
-                fullRefresh(title, artist, cover, timestamp, duration);
+                fullRefresh(title, artist, cover, timestamp, duration, completion);
             }
         }
     }
