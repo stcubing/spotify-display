@@ -117,7 +117,7 @@ void loop() {
 
     if (Serial.available()) {
         // String message = trickleSerialLines(Serial);
-        String message = Serial.readStringUntil('\n');
+        String message = Serial.readStringUntil('\n'); // something about this may be causing lag
 
         StaticJsonDocument<400> doc;
         DeserializationError error = deserializeJson(doc, message);
