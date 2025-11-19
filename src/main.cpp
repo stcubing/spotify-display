@@ -1,7 +1,12 @@
 #include <Arduino.h>
-#include<GxEPD2_BW.h>
-#include <Fonts/FreeMonoBold12pt7b.h>
-#include <Fonts/FreeSans9pt7b.h>
+
+#include <GxEPD2_BW.h>
+#include <Fonts/FreeSans12pt7b.h>
+#include <Fonts/FreeSans18pt7b.h>
+#include <Fonts/FreeSansBold9pt7b.h>
+
+#include <ArduinoJson.h>
+#include <LittleFS.h>
 
 const unsigned char smiley_bitmap[] PROGMEM = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -46,9 +51,10 @@ GxEPD2_BW<GxEPD2_579_GDEY0579T93, GxEPD2_579_GDEY0579T93::HEIGHT> display(
     GxEPD2_579_GDEY0579T93(5, 17, 16, 4) // cs, dc, rst, busy pins
 );
 
+
 void setup() {
-    Serial.begin(115200);
-    Serial.println("starting");
+
+    Serial.begin(9600);
 
     display.init(115200);
     display.setRotation(0);
@@ -57,24 +63,75 @@ void setup() {
 
     display.firstPage(); // clear
 
+
+    
+
+    if (Serial.available()) {
+        String message = Serial.readStringUntil('\n');
+        message.trim();
+
+        StaticJsonDocument<400> doc;
+        DeserializationError error = deserializeJson(doc, message);
+
+        if (error) {
+            Serial.println("error");
+        }
+        else {
+
+            if (doc["type"] == "small") {
+
+                // partial update
+
+                digitalWrite(2, HIGH);
+            }
+            else if (doc["type"] == "large") {
+
+                // full update
+
+                digitalWrite(2, LOW);
+            }
+        }
+    }
+
+    
+
     do {
         display.fillScreen(GxEPD_WHITE);
-        display.drawBitmap(50, 50, smiley_bitmap, 50, 34, GxEPD_BLACK); // x, y, image, width, height, colour
 
-        display.setFont(&FreeMonoBold12pt7b);
-        display.setCursor(150, 80);
-        display.print("gashgahf askdh");
+        // display.drawBitmap(50, 50, smiley_bitmap, 50, 34, GxEPD_BLACK); // x, y, image, width, height, colour
+        display.drawRect(20, 36, 200, 200, GxEPD_BLACK); // placeholder
 
-        display.setFont(&FreeSans9pt7b);
-        display.setCursor(150, 110);
-        display.print("free sans");
+        display.setFont(&FreeSans18pt7b);
+        display.setTextWrap(false);
+        display.setCursor(245, 95);
+        display.print("The Ballad of Matt & Mica");
+
+        display.setFont(&FreeSans12pt7b);
+        display.setCursor(245, 140);
+        display.print("Magdalena Bay");
 
 
+        display.drawRect(245, 175, 527, 10, GxEPD_BLACK); // outline
+        display.fillRect(245, 175, 400, 10, GxEPD_BLACK); // progress
+
+        display.setFont(&FreeSansBold9pt7b);
+        display.setCursor(245, 215);
+        display.print("3:05 / 4:00");
+
+
+        // // right align
+        // int16_t tbx; // bounds
+        // uint16_t tw; // width/height
+        // display.getTextBounds("texttext", 0, 0, &tbx, 0, &tw, 0);
+
+        // int16_t x = (740 - tw);
+        
+        // display.setCursor(x, 240);
+        // display.print("5:14");
 
 
     } while (display.nextPage());
 
-    Serial.println("updated");
 }
 
 void loop() {
