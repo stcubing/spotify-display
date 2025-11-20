@@ -1,20 +1,15 @@
-import base64
 from http.server import BaseHTTPRequestHandler, HTTPServer
-import json
-import math
 from urllib.parse import parse_qs, urlencode, urlparse
-import webbrowser
 from dotenv import load_dotenv
 from requests import post, get
-import requests
-import serial
-import time
-import os
+import base64, serial, json, math, webbrowser, requests, time, os
+
 from PIL import Image
 from dithering import ordered_dither
 import urllib.request
+import numpy as np
 
-ser = serial.Serial("COM6", 38400, timeout = 1)
+ser = serial.Serial("COM6", 115200)
 time.sleep(2)
 
 print("connected")
@@ -169,6 +164,7 @@ def update_tokens(ref_token):
     with open("token.txt", "w") as f:
         f.write(access_token+"\n")
         f.write(ref_token)
+        print("new token written!")
     
 
 last = {
@@ -184,6 +180,29 @@ last = {
 } # save last recorded details
 
 cooldown_counter = 3 # for refresh cooldown
+
+
+
+
+def pack_image(big_img):
+    
+    """ 
+    reduces load by compacting image into packed bytes
+    """
+    
+    flat = big_img.flatten()
+    
+    packed = bytearray()
+    for i in range(0, len(flat), 8): # group into bytes
+        byte = 0
+        for bit in range(8):
+            if flat[i + bit] == 255:
+                byte |= (1 << (7 - bit))
+        
+        packed.append(byte)
+        
+    return packed
+
 
 def get_activity(token, refresh):
     
@@ -207,6 +226,9 @@ def get_activity(token, refresh):
         print("updating token...")
         update_tokens(refresh)
         result = get(url, headers = headers)
+        
+        access_token, refresh_token = read_tokens()
+        get_activity(access_token, refresh_token)
     
     if result.content == "b''" or result.status_code == 204:
         # no activity for a loooong time
@@ -218,7 +240,7 @@ def get_activity(token, refresh):
     data = json.loads(result.content)
     # print(data)
     
-    if not data:
+    if not data.get("item"):
         return
     
     
@@ -240,21 +262,38 @@ def get_activity(token, refresh):
     
     id = data.get("item").get("id")
     
+    
     # convert artists list to string
     artist_name_list = []
     for artist in artist_list:
         artist_name_list.append(artist.get("name"))
     artists = ", ".join(artist_name_list)
     
+    
     # cover processing
     urllib.request.urlretrieve(cover, "cover.jpeg") # get from spotify url
-    image = Image.open("cover.jpeg").resize((200,200), Image.LANCZOS)
+    image = np.array(Image.open("cover.jpeg").resize((200,200), Image.LANCZOS))
     # os.remove("cover.jpeg")
     
-    converted = image.convert('1', dither = Image.Dither.FLOYDSTEINBERG)
+    converted = ordered_dither(image, "Bayer2x2")
     
-    converted.save("cover2.jpeg")
+    converted = np.where(converted > 127, 255, 0)
+    packed = pack_image(converted)
     
+    # barray = []
+    
+    # for row in converted:
+    #     for col in row:                
+    #         if col[0] == 255:
+    #             barray.append(0xFF)
+    #             # print("appended black")
+    #         else:
+    #             barray.append(0x00)
+    #             # print("appended white")
+                
+    # # print(barray)
+    # data = bytes(barray)
+    # ser.write(data)
     
     
 
@@ -292,7 +331,7 @@ def get_activity(token, refresh):
                     "type": "large",
                     "title": title,
                     "artist": artists,
-                    "cover": cover,
+                    # "cover": barray,
                     "timestamp": timestamp,
                     "duration": duration,
                     "completion": completion,
@@ -317,10 +356,18 @@ def get_activity(token, refresh):
     
     
     output = json.dumps(output)
-    print(output)
     
+    # length = len(data)
+    # print(length)
+    # ser.write(f"{length}\n".encode())
+    # print(output)
+
     ser.write(output.encode("ascii"))
     ser.flush() # wait to finish before proceeding
+    
+    time.sleep(0.05)
+    ser.write(packed)
+    ser.flush
     
 
 

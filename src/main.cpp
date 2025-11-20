@@ -6,6 +6,7 @@
 #include <Fonts/FreeSansBold9pt7b.h>
 
 #include <ArduinoJson.h>
+#include <memory>
 
 
 
@@ -35,7 +36,7 @@ String trickleSerialLines(HardwareSerial &serial) {
 
 
 // update everything
-void fullRefresh(String title, String artist, String cover, String timestamp, String duration, double completion) {
+void fullRefresh(String title, String artist, const unsigned char * cover, String timestamp, String duration, double completion) {
 
 
     display.setFullWindow();
@@ -45,8 +46,8 @@ void fullRefresh(String title, String artist, String cover, String timestamp, St
     do {
         display.fillScreen(GxEPD_WHITE);
     
-        // display.drawBitmap(50, 50, smiley_bitmap, 50, 34, GxEPD_BLACK); // x, y, image, width, height, colour
-        display.drawRect(20, 36, 200, 200, GxEPD_BLACK); // placeholder
+        display.drawBitmap(20, 36, cover, 200, 200, GxEPD_BLACK); // x, y, image, width, height, colour
+        // display.drawRect(20, 36, 200, 200, GxEPD_BLACK); // placeholder
     
         display.setFont(&FreeSans18pt7b);
         display.setTextWrap(false);
@@ -118,9 +119,21 @@ void loop() {
     if (Serial.available()) {
         // String message = trickleSerialLines(Serial);
         String message = Serial.readStringUntil('\n'); // something about this may be causing lag
+        
+        // String length_str = Serial.readStringUntil('\n');
+        // int msg_length = length_str.toInt();
+        // if (msg_length <= 0) {
+        //     return;
+        // }
 
-        StaticJsonDocument<400> doc;
-        DeserializationError error = deserializeJson(doc, message);
+        // std::unique_ptr<char[]> buffer(new char[msg_length + 1]);
+
+        // int read_count = Serial.readBytes(buffer.get(), msg_length);
+        // buffer[read_count] = '\0';
+
+        // StaticJsonDocument<1024> doc;
+        // DeserializationError error = deserializeJson(doc, buffer.get());
+        
 
         
         if (error) {
@@ -153,10 +166,20 @@ void loop() {
 
                 String title = doc["title"];
                 String artist = doc["artist"];
-                String cover = doc["cover"];
+                // const unsigned char cover[] PROGMEM = {doc["cover"]};
                 String timestamp = doc["timestamp"];
                 String duration = doc["duration"];
                 double completion = doc["completion"];
+
+
+                uint8_t cover[5000];
+                int received = 0;
+
+                while (received < 5000) {
+                    if (Serial.available()) {
+                        cover[received++] = Serial.read();
+                    }
+                }
 
                 fullRefresh(title, artist, cover, timestamp, duration, completion);
             }
