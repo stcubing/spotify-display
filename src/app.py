@@ -124,7 +124,7 @@ def update_token(refresh_token):
     
     result = requests.post(url, headers = headers, data = data)
     
-    print(result.json())
+    # print(result.json())
     return result.json()
     
 
@@ -229,6 +229,7 @@ def get_activity(token, refresh):
         
         access_token, refresh_token = read_tokens()
         get_activity(access_token, refresh_token)
+        result.status_code = 200
     
     if result.content == "b''" or result.status_code == 204:
         # no activity for a loooong time
@@ -254,10 +255,11 @@ def get_activity(token, refresh):
     artist_list = data.get("item").get("artists") # list
     if len(data.get("item").get("album").get("images")) > 0:
         cover = data.get("item").get("album").get("images")[0].get("url")
-    else:
-        cover = "/assets/man.jpg" # placeholder
+    # else:
+    #     cover = "/assets/man.jpg" # placeholder
     timestamp = ms_convert(data.get("progress_ms"))
     duration = ms_convert(data.get("item").get("duration_ms"))
+    timestamp = f"{timestamp} / {duration}" 
     is_playing = data.get("is_playing")
     
     id = data.get("item").get("id")
@@ -302,43 +304,45 @@ def get_activity(token, refresh):
     
     # decision split here based on time?
     
-    print(f"music playing: {is_playing}")
+    print(f"playing: {is_playing}")
     
     if is_playing:
         
         if cooldown_counter < 4:
-            cooldown_counter += 1
+            cooldown_counter += 2
     
         if last.get("id") == id: # still listening to the same song
             
-            print("currently on same song | partial refresh, led ON")
+            print("currently on same song | partial refresh, red ON")
             
             # send only timestamp
             output = {
-                "type": "small", # differentiate between partial and full refreshes
+                "type": "S", # differentiate between partial and full refreshes
                 "timestamp": timestamp,
-                "duration": duration,
                 "completion": completion
             }
+            
+            string_output = f"S|{timestamp}|{completion}"
             
         else: # listening to different song
             
             if cooldown_counter > 2:
             
-                print("song changed | full refresh, led OFF")
+                print("song changed | full refresh, green ON")
 
                 output = {
-                    "type": "large",
+                    "type": "L",
                     "title": title,
                     "artist": artists,
                     "cover": None,
                     "timestamp": timestamp,
-                    "duration": duration,
                     "completion": completion,
                     "is_playing": is_playing,
-                    "id": id
+                    "id": id 
                 }
                 last = output # refresh last saved
+                
+                string_output = f"L|{title}|{artists}|{None}|{timestamp}|{completion}"
                 
                 cooldown_counter = 0
             
@@ -347,11 +351,11 @@ def get_activity(token, refresh):
                 return
             
         
-            
+    
     else: # if no music is playing, dont return anything at all
         print("nothing changes")
         if cooldown_counter < 4:
-            cooldown_counter += 1
+            cooldown_counter += 2
         return
     
     
@@ -360,9 +364,13 @@ def get_activity(token, refresh):
     # length = len(data)
     # print(length)
     # ser.write(f"{length}\n".encode())
-    print(output)
+    print(string_output)
 
-    ser.write(output.encode("ascii"))
+    # ser.write(output.encode("ascii"))
+
+    ser.write(string_output.encode())
+
+
     ser.flush() # wait to finish before proceeding
     
     # time.sleep(0.05)
@@ -381,11 +389,11 @@ if __name__ == "__main__":
     while True:
         # gurt = input()
         get_activity(access_token, refresh_token)
-        print(cooldown_counter)
+        print(f"c: {cooldown_counter}")
         # line = ser.readline().decode(errors="ignore").strip()
         # if line:
         #     print("esp: " + line)
-        time.sleep(1)
+        time.sleep(2)
     
 
         
