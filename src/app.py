@@ -1,13 +1,10 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import parse_qs, urlencode, urlparse
 from dotenv import load_dotenv
-from requests import post, get
-import base64, serial, json, math, webbrowser, requests, time, os
+from requests import get
+import base64, serial, json, math, webbrowser, requests, time, os, io
 
-from PIL import Image
-from dithering import ordered_dither
-import urllib.request
-import numpy as np
+from PIL import Image, ImageOps
 
 ser = serial.Serial("COM6", 115200)
 time.sleep(2)
@@ -18,10 +15,6 @@ load_dotenv()
 client_id = os.getenv("CLIENT_ID")
 client_secret = os.getenv("CLIENT_SECRET")
 redirect_uri = os.getenv("REDIRECT_URI")
-
-
-
-
 
 
 class auth_handler(BaseHTTPRequestHandler):
@@ -208,6 +201,8 @@ def get_activity(token, refresh):
     
     global last
     global cooldown_counter
+    global access_token
+    global refresh_token
     
     """ 
     the actual Meat and Potaro of this program. outputs a json with contents dependent on activity
@@ -228,8 +223,7 @@ def get_activity(token, refresh):
         result = get(url, headers = headers)
         
         access_token, refresh_token = read_tokens()
-        get_activity(access_token, refresh_token)
-        result.status_code = 200
+        return
     
     if result.content == "b''" or result.status_code == 204:
         # no activity for a loooong time
@@ -255,8 +249,8 @@ def get_activity(token, refresh):
     artist_list = data.get("item").get("artists") # list
     if len(data.get("item").get("album").get("images")) > 0:
         cover = data.get("item").get("album").get("images")[0].get("url")
-    # else:
-    #     cover = "/assets/man.jpg" # placeholder
+    else:
+        cover = "man.jpg" # placeholder
     timestamp = ms_convert(data.get("progress_ms"))
     duration = ms_convert(data.get("item").get("duration_ms"))
     timestamp = f"{timestamp} / {duration}" 
@@ -272,32 +266,6 @@ def get_activity(token, refresh):
     artists = ", ".join(artist_name_list)
     if artists == "":
         artists = "undefined"
-    
-    
-    # cover processing
-    # urllib.request.urlretrieve(cover, "cover.jpeg") # get from spotify url
-    # image = np.array(Image.open("cover.jpeg").resize((200,200), Image.LANCZOS))
-    # # os.remove("cover.jpeg")
-    
-    # converted = ordered_dither(image, "Bayer2x2")
-    
-    # converted = np.where(converted > 127, 255, 0)
-    # packed = pack_image(converted)
-    
-    # barray = []
-    
-    # for row in converted:
-    #     for col in row:                
-    #         if col[0] == 255:
-    #             barray.append(0xFF)
-    #             # print("appended black")
-    #         else:
-    #             barray.append(0x00)
-    #             # print("appended white")
-                
-    # # print(barray)
-    # data = bytes(barray)
-    # ser.write(data)
     
     
 
@@ -324,19 +292,39 @@ def get_activity(token, refresh):
                 "completion": completion
             }
             
-            string_output = f"S|{timestamp}|{completion}"
+            string_output = f"S|{timestamp}|{completion}\n"
+            print(string_output)
+            ser.write(string_output.encode('utf-8'))
             
         else: # listening to different song
             
             if cooldown_counter > 2:
             
                 print("song changed | full refresh, green ON")
+                
+                # cover processing
+
+                if "https" in cover: # fetch link if link is there
+                    cover_res = requests.get(cover)
+                    image = Image.open(io.BytesIO(cover_res.content))
+                else:
+                    image = Image.open("assets/man.jpg")
+
+                image = image.resize((200, 200), Image.Resampling.LANCZOS)
+
+                image = image.convert("L") # b&w
+                image = ImageOps.invert(image)
+                image = image.convert("1") # dither
+
+                image_bytes = image.tobytes()
+
+                # print(len(image_bytes))
 
                 output = {
                     "type": "L",
                     "title": title,
                     "artist": artists,
-                    "cover": None,
+                    # "cover": image_bytes,
                     "timestamp": timestamp,
                     "completion": completion,
                     "is_playing": is_playing,
@@ -344,7 +332,12 @@ def get_activity(token, refresh):
                 }
                 last = output # refresh last saved
                 
-                string_output = f"L|{title}|{artists}|{None}|{timestamp}|{completion}"
+                string_output = f"L|{title}|{artists}|{timestamp}|{completion}|"
+                print(string_output)
+                ser.write(string_output.encode('utf-8'))
+                
+                ser.write(image_bytes) # send bytes after
+                ser.write(b'\n')
                 
                 cooldown_counter = 0
             
@@ -361,37 +354,21 @@ def get_activity(token, refresh):
         return
     
     
-    output = json.dumps(output)
-    
-    # length = len(data)
-    # print(length)
-    # ser.write(f"{length}\n".encode())
-    print(string_output)
-
-    # ser.write(output.encode("ascii"))
-
-    ser.write(string_output.encode())
-
+    # output = json.dumps(output)
+    # print(output)
 
     ser.flush() # wait to finish before proceeding
-    
-    # time.sleep(0.05)
-    # ser.write(packed)
-    # ser.flush
     
 
 
 if __name__ == "__main__":
     access_token, refresh_token = read_tokens()
-    # get_activity(access_token)
-    # ser.close()
-    
     
     # temp testing
     while True:
-        # gurt = input()
+
         get_activity(access_token, refresh_token)
-        print(f"c: {cooldown_counter}")
+        print(f"c: {cooldown_counter}\n----\n")
         # line = ser.readline().decode(errors="ignore").strip()
         # if line:
         #     print("esp: " + line)
