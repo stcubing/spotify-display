@@ -271,14 +271,14 @@ def get_activity(token, refresh):
     
     
     # cover processing
-    urllib.request.urlretrieve(cover, "cover.jpeg") # get from spotify url
-    image = np.array(Image.open("cover.jpeg").resize((200,200), Image.LANCZOS))
-    # os.remove("cover.jpeg")
+    # urllib.request.urlretrieve(cover, "cover.jpeg") # get from spotify url
+    # image = np.array(Image.open("cover.jpeg").resize((200,200), Image.LANCZOS))
+    # # os.remove("cover.jpeg")
     
-    converted = ordered_dither(image, "Bayer2x2")
+    # converted = ordered_dither(image, "Bayer2x2")
     
-    converted = np.where(converted > 127, 255, 0)
-    packed = pack_image(converted)
+    # converted = np.where(converted > 127, 255, 0)
+    # packed = pack_image(converted)
     
     # barray = []
     
@@ -331,7 +331,7 @@ def get_activity(token, refresh):
                     "type": "large",
                     "title": title,
                     "artist": artists,
-                    # "cover": barray,
+                    "cover": None,
                     "timestamp": timestamp,
                     "duration": duration,
                     "completion": completion,
@@ -360,14 +360,14 @@ def get_activity(token, refresh):
     # length = len(data)
     # print(length)
     # ser.write(f"{length}\n".encode())
-    # print(output)
+    print(output)
 
     ser.write(output.encode("ascii"))
     ser.flush() # wait to finish before proceeding
     
-    time.sleep(0.05)
-    ser.write(packed)
-    ser.flush
+    # time.sleep(0.05)
+    # ser.write(packed)
+    # ser.flush
     
 
 
