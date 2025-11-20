@@ -155,7 +155,7 @@ void loop() {
 
             const char* message_char = doc.c_str();
 
-            sscanf(message_char, "S|%[^|]%f", &timestamp, &completion);
+            sscanf(message_char, "S|%[^|]|%f", &timestamp, &completion);
 
             partialRefresh(timestamp, completion);
             doc = ' ';

@@ -270,6 +270,8 @@ def get_activity(token, refresh):
     for artist in artist_list:
         artist_name_list.append(artist.get("name"))
     artists = ", ".join(artist_name_list)
+    if artists == "":
+        artists = "undefined"
     
     
     # cover processing
