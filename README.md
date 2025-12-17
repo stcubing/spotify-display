@@ -1,13 +1,11 @@
 # spotify display
 
-## description
 
 This is a mini E-Ink screen powered by an ESP-32 through USB-C that displays what you are listening to on Spotify, live. It uses a Python script that sends periodic messages over serial, triggering a mix of full and partial display refreshes depending on activity (song change, playback status, timestamp, etc.).
 
 The screen displays a (stylish!!) dithered edit of the album art due to the limitations of the Waveshare 5.79" E-Ink module, the song title, artist names, and the point in the song the playback is currently at, updating roughly every 2 seconds.
 
 <img src="images/img1.png" width="100%" alt="image of the display"/>
-<br>
 <sub>i love imaginal disk</sub>
 
 
@@ -20,7 +18,6 @@ This success was extremely short-lived as I realised how insanely slow the seria
 The UI 'design' was fortunately straightforward. While it was a huge pain setting up the library required for my specific model of display, it was really satisfying understanding it eventually getting everything working.
 
 <img src="images/img2.png" width="100%" alt="image of the display"/>
-<br>
 <sub>ninajirachi my goat</sub>
 
 <br>
