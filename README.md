@@ -5,10 +5,8 @@ This is a mini E-Ink screen powered by an ESP-32 through USB-C that displays wha
 
 The screen displays a (stylish!!) dithered edit of the album art due to the limitations of the Waveshare 5.79" E-Ink module, the song title, artist names, and the point in the song the playback is currently at, updating roughly every 2 seconds.
 
-<figure>
-    <img src="images/img1.png" width="100%" alt="image of the display"/>
-    <figcaption>i love imaginal disk</figcaption>
-</figure>
+<img src="images/img1.png" width="100%" alt="image of the display"/>
+<sub>i love imaginal disk</sub>
 
 
 ## process
@@ -19,10 +17,8 @@ This success was extremely short-lived as I realised how insanely slow the seria
 
 The UI 'design' was fortunately straightforward. While it was a huge pain setting up the library required for my specific model of display, it was really satisfying understanding it eventually getting everything working.
 
-<figure>
-    <img src="images/img2.png" width="100%" alt="image of the display"/>
-    <figcaption>ninajirachi my goat</figcaption>
-</figure>
+<img src="images/img2.png" width="100%" alt="image of the display"/>
+<sub>ninajirachi my goat</sub>
 
 <br>
 
@@ -46,12 +42,12 @@ A different friend also suggested turning this into an actual product that peopl
 
 I love making silly drawings as drafts and concepts for my projects or anything I work on. Despite how inaccurate they are now, I think the ones for these project are pretty cool :p
 
-<figure style="display: flex; width: 100%; align-items: center; gap: 10px">
+<div style="display: flex; width: 100%; align-items: center; gap: 10px">
     <img src="images/draft1.png" width="40%" alt="drawing of the initial concept"/>
-    <img src="images/draft2.png" width="60%" height="100% alt="drawing of the housing concepts" />
-    <figcaption>almost unintelligible first concepts, some drawings from trying to figure out the housing</figcaption>
-</figure>
+    <img src="images/draft2.png" width="60%" height="100% alt="drawing of the housing concepts"/>
+</div>
 
+<sub>almost unintelligible first concepts, some drawings from trying to figure out the housing</sub>
 
 
 ## future improvements
